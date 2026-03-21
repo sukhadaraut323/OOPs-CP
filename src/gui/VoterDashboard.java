@@ -11,7 +11,8 @@ public class VoterDashboard extends JPanel {
 
     private Voter voter;
     private JPanel mainContent;
-
+    // private JLabel statusLabel;      // ← ADD THIS LINE
+    private JLabel topVotedStatus;   // ← ADD THIS LINE
     public VoterDashboard(Voter voter) {
         this.voter = voter;
         setLayout(new BorderLayout());
@@ -41,20 +42,28 @@ public class VoterDashboard extends JPanel {
         welcome.setFont(MainFrame.FONT_SUBHEAD);
         welcome.setForeground(MainFrame.TEXT_DARK);
 
-        JLabel status = new JLabel(voter.hasVoted()
-                ? "  ✅ You have voted" : "  🗳️  You have not voted yet");
-        status.setFont(MainFrame.FONT_SMALL);
-        status.setForeground(voter.hasVoted() ? MainFrame.SUCCESS : MainFrame.DANGER);
+        // ── Make this a field so we can update it ──
+        topVotedStatus = new JLabel(getVotedStatusText());
+        topVotedStatus.setFont(MainFrame.FONT_SMALL);
+        topVotedStatus.setForeground(
+                voter.hasVoted() ? MainFrame.SUCCESS : MainFrame.DANGER);
 
         JButton logoutBtn = MainFrame.dangerButton("Logout");
         logoutBtn.addActionListener(e -> MainFrame.showScreen(new LoginScreen()));
 
-        bar.add(welcome,   BorderLayout.WEST);
-        bar.add(status,    BorderLayout.CENTER);
-        bar.add(logoutBtn, BorderLayout.EAST);
+        bar.add(welcome,       BorderLayout.WEST);
+        bar.add(topVotedStatus, BorderLayout.CENTER);
+        bar.add(logoutBtn,     BorderLayout.EAST);
 
         return bar;
     }
+
+// ── Helper to get voted status text ───────────
+private String getVotedStatusText() {
+    return voter.hasVoted()
+            ? "  You have voted"
+            : "  You have not voted yet";
+}
 
     // ── Sidebar ───────────────────────────────
     private JPanel buildSidebar() {
@@ -382,6 +391,13 @@ public class VoterDashboard extends JPanel {
 
     // Called by BallotScreen after voting
     public void refreshAfterVoting() {
+        // ── Update top bar status label ────────────
+        if (topVotedStatus != null) {
+            topVotedStatus.setText(getVotedStatusText());
+            topVotedStatus.setForeground(MainFrame.SUCCESS);
+        }
+
+        // ── Refresh main content ───────────────────
         mainContent.removeAll();
         showHome();
         mainContent.revalidate();
