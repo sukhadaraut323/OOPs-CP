@@ -12,18 +12,18 @@ public class EVMVoting {
     private GeneralElection election;
     private ArrayList<Ballot> ballots;
     private int ballotCounter;
-    private Scanner sc;                         // ← shared scanner
+    private Scanner sc;                         
 
-    public EVMVoting(GeneralElection election, Scanner sc) {  // ← scanner in constructor
+    public EVMVoting(GeneralElection election, Scanner sc) {  
         this.election      = election;
         this.ballots       = new ArrayList<>();
         this.ballotCounter = 1;
-        this.sc            = sc;                // ← assign, don't create new
+        this.sc            = sc;                
     }
 
     // Main EVM voting process for a voter
     public boolean startVoting(Voter voter) {
-                                                // ← NO new Scanner here anymore
+                                                
         System.out.println();
         System.out.println("╔══════════════════════════════════╗");
         System.out.println("║          🗳️  EVM VOTING           ║");
@@ -38,6 +38,13 @@ public class EVMVoting {
         // Step 2 — Check voter already voted
         if (voter.hasVoted()) {
             System.out.println("❌ You have already cast your vote!");
+            return false;
+        }
+
+        // Step 2b — Check voter is verified
+        if (!voter.isVerified()) {
+            System.out.println("Your registration is PENDING admin verification.");
+            System.out.println("Please visit the Election Office.");
             return false;
         }
 
