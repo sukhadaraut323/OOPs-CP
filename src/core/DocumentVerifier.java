@@ -1,105 +1,175 @@
 package core;
 
 import persons.Candidate;
+import persons.Voter;
 import java.util.ArrayList;
 
 public class DocumentVerifier {
 
-    // Check if any existing candidate has the exact same full name
-    public static boolean isDuplicateName(String newName, ArrayList<Candidate> existingCandidates) {
+    // ─────────────────────────────────────────
+    //           CANDIDATE METHODS
+    // ─────────────────────────────────────────
+
+    public static boolean isDuplicateCandidateName(String newName,
+            ArrayList<Candidate> existingCandidates) {
         for (Candidate c : existingCandidates) {
-            if (c.getName().equalsIgnoreCase(newName)) {
-                return true;
-            }
+            if (c.getName().equalsIgnoreCase(newName)) return true;
         }
         return false;
     }
 
-    // Find all candidates with the same name
-    public static ArrayList<Candidate> getDuplicates(String name, ArrayList<Candidate> existingCandidates) {
+    public static ArrayList<Candidate> getDuplicateCandidates(String name,
+            ArrayList<Candidate> existingCandidates) {
         ArrayList<Candidate> duplicates = new ArrayList<>();
         for (Candidate c : existingCandidates) {
-            if (c.getName().equalsIgnoreCase(name)) {
-                duplicates.add(c);
-            }
+            if (c.getName().equalsIgnoreCase(name)) duplicates.add(c);
         }
         return duplicates;
     }
 
-    // Called when a duplicate name is detected
-    // BOTH the existing candidate AND the new candidate must be dual verified
-    public static boolean dualVerifyBoth(
+    // Returns:
+    //  "BOTH"      → both original, different people, add new candidate
+    //  "EXISTING"  → only existing is original, block new
+    //  "NEW"       → only new is original, remove existing add new
+    //  "SAME"      → same person trying to register twice, block
+    //  "FAILED"    → document verification failed for one or both
+    public static String dualVerifyCandidates(
             Candidate existingCandidate,
             String existingVoterID, String existingDocument,
             Candidate newCandidate,
             String newVoterID, String newDocument) {
 
-        System.out.println("⚠️  Duplicate name detected: " + newCandidate.getName());
-        System.out.println("   Both candidates must be dual verified.");
-        System.out.println();
+        // ── Step 1: Verify each against their own submitted docs ───
+        boolean existingVerified =
+                existingCandidate.getVoterID().equals(existingVoterID)
+                && existingCandidate.getAadhaarOrPAN().equals(existingDocument);
 
-        // --- Verify existing candidate ---
-        System.out.println("🔍 Verifying EXISTING candidate: " + existingCandidate.getName()
-                + " (ID: " + existingCandidate.getCandidateID() + ")");
+        boolean newVerified =
+                newCandidate.getVoterID().equals(newVoterID)
+                && newCandidate.getAadhaarOrPAN().equals(newDocument);
 
-        boolean existingVoterIDMatch   = existingCandidate.getVoterID().equals(existingVoterID);
-        boolean existingDocumentMatch  = existingCandidate.getAadhaarOrPAN().equals(existingDocument);
-
-        if (!existingVoterIDMatch || !existingDocumentMatch) {
-            System.out.println("❌ Existing candidate verification FAILED!");
-            System.out.println("   VoterID Match  : " + existingVoterIDMatch);
-            System.out.println("   Document Match : " + existingDocumentMatch);
-            System.out.println("   Existing candidate is flagged. Please verify manually.");
-            return false;
+        // ── Step 2: Both must verify first ────────────────────────
+        if (!existingVerified && !newVerified) {
+            return "FAILED"; // neither could verify
         }
-        System.out.println("✅ Existing candidate verified successfully!");
-        existingCandidate.setDualVerified(true);
-
-        System.out.println();
-
-        // --- Verify new candidate ---
-        System.out.println("🔍 Verifying NEW candidate: " + newCandidate.getName()
-                + " (ID: " + newCandidate.getCandidateID() + ")");
-
-        boolean newVoterIDMatch   = newCandidate.getVoterID().equals(newVoterID);
-        boolean newDocumentMatch  = newCandidate.getAadhaarOrPAN().equals(newDocument);
-
-        if (!newVoterIDMatch || !newDocumentMatch) {
-            System.out.println("❌ New candidate verification FAILED!");
-            System.out.println("   VoterID Match  : " + newVoterIDMatch);
-            System.out.println("   Document Match : " + newDocumentMatch);
-            System.out.println("   New candidate is rejected.");
-            return false;
+        if (!existingVerified) {
+            // Existing failed verification → new is original
+            newCandidate.setDualVerified(true);
+            return "NEW";
         }
-        System.out.println("✅ New candidate verified successfully!");
-        newCandidate.setDualVerified(true);
+        if (!newVerified) {
+            // New failed verification → existing is original
+            existingCandidate.setDualVerified(true);
+            return "EXISTING";
+        }
 
-        System.out.println();
+        // ── Step 3: Both verified, now cross check ─────────────────
+        boolean sameVoterID =
+                existingCandidate.getVoterID().equals(newCandidate.getVoterID());
+        boolean sameDocument =
+                existingCandidate.getAadhaarOrPAN()
+                        .equals(newCandidate.getAadhaarOrPAN());
 
-        // --- Cross check — are they actually the same person? ---
-        boolean sameVoterID  = existingCandidate.getVoterID().equals(newCandidate.getVoterID());
-        boolean sameDocument = existingCandidate.getAadhaarOrPAN().equals(newCandidate.getAadhaarOrPAN());
+        if (sameVoterID && sameDocument) {
+            return "SAME"; // exact same person
+        }
 
         if (sameVoterID || sameDocument) {
-            System.out.println("❌ SAME PERSON detected! Both candidates share identical documents.");
-            System.out.println("   Registration of new candidate REJECTED.");
-            existingCandidate.setDualVerified(false); // reset existing too
-            newCandidate.setDualVerified(false);
-            return false;
+            // One document matches — partial overlap
+            // Existing registered first so existing is trusted original
+            existingCandidate.setDualVerified(true);
+            return "EXISTING";
         }
 
-        System.out.println("✅ Both candidates are DIFFERENT people with the same name.");
-        System.out.println("   Both are now dual-verified and allowed to contest.");
-        return true;
+        // ── Step 4: Completely different docs — both are originals ──
+        existingCandidate.setDualVerified(true);
+        newCandidate.setDualVerified(true);
+        return "BOTH";
     }
 
-    // Display verification summary for any candidate
-    public static void printVerificationSummary(Candidate candidate) {
-        System.out.println("--- Verification Summary ---");
-        System.out.println("Candidate   : " + candidate.getName());
-        System.out.println("Candidate ID: " + candidate.getCandidateID());
-        System.out.println("Voter ID    : " + candidate.getVoterID());
-        System.out.println("Document    : " + candidate.getAadhaarOrPAN());
-        System.out.println("Dual Verify : " + (candidate.isDualVerified() ? "✅ Verified" : "❌ Not Verified"));
+    // ─────────────────────────────────────────
+    //           VOTER METHODS
+    // ─────────────────────────────────────────
+
+    public static boolean isDuplicateVoterName(String newName,
+            ArrayList<Voter> existingVoters) {
+        for (Voter v : existingVoters) {
+            if (v.getName().equalsIgnoreCase(newName)) return true;
+        }
+        return false;
+    }
+
+    public static ArrayList<Voter> getDuplicateVoters(String name,
+            ArrayList<Voter> existingVoters) {
+        ArrayList<Voter> duplicates = new ArrayList<>();
+        for (Voter v : existingVoters) {
+            if (v.getName().equalsIgnoreCase(name)) duplicates.add(v);
+        }
+        return duplicates;
+    }
+
+    // Returns:
+    //  "BOTH"      → both original, different people, add new voter
+    //  "EXISTING"  → only existing is original, block new
+    //  "NEW"       → only new is original, remove existing add new
+    //  "SAME"      → same person trying to register twice, block
+    //  "FAILED"    → document verification failed for one or both
+    public static String dualVerifyVoters(
+            Voter existingVoter,
+            String existingVoterID, String existingDocument,
+            Voter newVoter,
+            String newVoterID, String newDocument) {
+
+        // ── Step 1: Verify each against their own submitted docs ───
+        boolean existingVerified =
+                existingVoter.getVoterID().equals(existingVoterID)
+                && existingVoter.getAadhaarOrPAN().equals(existingDocument);
+
+        boolean newVerified =
+                newVoter.getVoterID().equals(newVoterID)
+                && newVoter.getAadhaarOrPAN().equals(newDocument);
+
+        // ── Step 2: Handle individual failures ────────────────────
+        if (!existingVerified && !newVerified) {
+            return "FAILED";
+        }
+        if (!existingVerified) {
+            // Existing voter's docs don't match → new is original
+            return "NEW";
+        }
+        if (!newVerified) {
+            // New voter's docs don't match → existing is original
+            return "EXISTING";
+        }
+
+        // ── Step 3: Both verified, cross check ────────────────────
+        boolean sameVoterID =
+                existingVoter.getVoterID().equals(newVoter.getVoterID());
+        boolean sameDocument =
+                existingVoter.getAadhaarOrPAN()
+                        .equals(newVoter.getAadhaarOrPAN());
+
+        if (sameVoterID && sameDocument) {
+            return "SAME";
+        }
+
+        if (sameVoterID || sameDocument) {
+            // Partial overlap → existing registered first → existing trusted
+            return "EXISTING";
+        }
+
+        // ── Step 4: Completely different → both are originals ──────
+        return "BOTH";
+    }
+
+    // ── Legacy compatibility methods ──────────
+    public static boolean isDuplicateName(String newName,
+            ArrayList<Candidate> existingCandidates) {
+        return isDuplicateCandidateName(newName, existingCandidates);
+    }
+
+    public static ArrayList<Candidate> getDuplicates(String name,
+            ArrayList<Candidate> existingCandidates) {
+        return getDuplicateCandidates(name, existingCandidates);
     }
 }

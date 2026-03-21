@@ -158,17 +158,17 @@ public class AdminDashboard extends JPanel {
                 ? (LoginScreen.election.isOpen() ? "OPEN" : "CLOSED")
                 : "Not Setup";
 
-        panel.add(statCard("Total Voters",      String.valueOf(totalVoters),
+        panel.add(statCard("Total Voters",    String.valueOf(totalVoters),
                 MainFrame.PRIMARY));
-        panel.add(statCard("Candidates",        String.valueOf(totalCandidates),
+        panel.add(statCard("Candidates",      String.valueOf(totalCandidates),
                 new Color(106, 27, 154)));
-        panel.add(statCard("Ballots Cast",      String.valueOf(totalBallots),
+        panel.add(statCard("Ballots Cast",    String.valueOf(totalBallots),
                 MainFrame.SUCCESS));
-        panel.add(statCard("Parties",           String.valueOf(totalParties),
+        panel.add(statCard("Parties",         String.valueOf(totalParties),
                 new Color(230, 81, 0)));
-        panel.add(statCard("Constituencies",    String.valueOf(totalConst),
+        panel.add(statCard("Constituencies",  String.valueOf(totalConst),
                 new Color(0, 96, 100)));
-        panel.add(statCard("Election Status",   elecStatus,
+        panel.add(statCard("Election Status", elecStatus,
                 MainFrame.PRIMARY_LIGHT));
 
         JLabel heading = MainFrame.sectionLabel("Dashboard Overview");
@@ -208,8 +208,8 @@ public class AdminDashboard extends JPanel {
         JTextField startField = MainFrame.styledField(20);
         JTextField endField   = MainFrame.styledField(20);
 
-        addFormRow(card, "Election ID",   idField);
-        addFormRow(card, "Election Name", nameField);
+        addFormRow(card, "Election ID",             idField);
+        addFormRow(card, "Election Name",           nameField);
         addFormRow(card, "Start Date (DD-MM-YYYY)", startField);
         addFormRow(card, "End Date (DD-MM-YYYY)",   endField);
 
@@ -268,7 +268,6 @@ public class AdminDashboard extends JPanel {
                 return;
             }
 
-            // Check duplicate
             for (Constituency c : LoginScreen.election.getConstituencies()) {
                 if (c.getConstituencyID().equalsIgnoreCase(id)) {
                     msg.setForeground(MainFrame.DANGER);
@@ -316,7 +315,6 @@ public class AdminDashboard extends JPanel {
                 return;
             }
 
-            // Check duplicate
             for (Party p : LoginScreen.election.getParties()) {
                 if (p.getPartyID().equalsIgnoreCase(id)) {
                     msg.setForeground(MainFrame.DANGER);
@@ -341,52 +339,100 @@ public class AdminDashboard extends JPanel {
     private void showAddCandidate() {
         if (!checkElection()) return;
 
-        // ── Form card ─────────────────────────────
+        JPanel outer = new JPanel(new GridBagLayout());
+        outer.setBackground(MainFrame.BG);
+
         JPanel card = new JPanel();
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
         card.setBackground(MainFrame.WHITE);
         card.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(MainFrame.BORDER),
-                BorderFactory.createEmptyBorder(28, 32, 28, 32)));
+                BorderFactory.createEmptyBorder(24, 32, 24, 32)));
+        card.setPreferredSize(new Dimension(700, 520));
 
         JLabel heading = MainFrame.sectionLabel("Add Candidate");
         heading.setAlignmentX(LEFT_ALIGNMENT);
         card.add(heading);
-        card.add(Box.createVerticalStrut(20));
+        card.add(Box.createVerticalStrut(16));
 
-        JTextField nameField         = MainFrame.styledField(20);
-        JTextField ageField          = MainFrame.styledField(20);
-        JTextField phoneField        = MainFrame.styledField(20);
-        JTextField candidateIDField  = MainFrame.styledField(20);
-        JTextField voterIDField      = MainFrame.styledField(20);
-        JTextField documentField     = MainFrame.styledField(20);
-        JTextField partyIDField      = MainFrame.styledField(20);
-        JTextField constituencyField = MainFrame.styledField(20);
+        // ── 2 column grid ─────────────────────
+        JPanel grid = new JPanel(new GridLayout(4, 4, 16, 12));
+        grid.setOpaque(false);
+        grid.setMaximumSize(new Dimension(660, 260));
+        grid.setAlignmentX(LEFT_ALIGNMENT);
 
-        addFormRow(card, "Full Name",       nameField);
-        addFormRow(card, "Age",             ageField);
-        addFormRow(card, "Phone",           phoneField);
-        addFormRow(card, "Candidate ID",    candidateIDField);
-        addFormRow(card, "Voter ID",        voterIDField);
-        addFormRow(card, "Aadhaar / PAN",   documentField);
-        addFormRow(card, "Party ID",        partyIDField);
-        addFormRow(card, "Constituency ID", constituencyField);
+        JTextField nameField         = MainFrame.styledField(12);
+        JTextField ageField          = MainFrame.styledField(12);
+        JTextField phoneField        = MainFrame.styledField(12);
+        JTextField candidateIDField  = MainFrame.styledField(12);
+        JTextField voterIDField      = MainFrame.styledField(12);
+        JTextField documentField     = MainFrame.styledField(12);
+        JTextField partyIDField      = MainFrame.styledField(12);
+        JTextField constituencyField = MainFrame.styledField(12);
 
+        grid.add(gridLabel("Full Name"));
+        grid.add(nameField);
+        grid.add(gridLabel("Age"));
+        grid.add(ageField);
+
+        grid.add(gridLabel("Phone"));
+        grid.add(phoneField);
+        grid.add(gridLabel("Candidate ID"));
+        grid.add(candidateIDField);
+
+        grid.add(gridLabel("Voter ID"));
+        grid.add(voterIDField);
+        grid.add(gridLabel("Aadhaar / PAN"));
+        grid.add(documentField);
+
+        grid.add(gridLabel("Party ID"));
+        grid.add(partyIDField);
+        grid.add(gridLabel("Constituency ID"));
+        grid.add(constituencyField);
+
+        card.add(grid);
+        card.add(Box.createVerticalStrut(12));
+
+        // ── Hint ──────────────────────────────
         JLabel hint = new JLabel(
                 "Voter ID: 10 alphanumeric  |  Aadhaar: 12 digits  |  PAN: ABCDE1234F");
         hint.setFont(MainFrame.FONT_SMALL);
         hint.setForeground(MainFrame.TEXT_GREY);
         hint.setAlignmentX(LEFT_ALIGNMENT);
         card.add(hint);
-        card.add(Box.createVerticalStrut(8));
+        card.add(Box.createVerticalStrut(10));
 
-        JLabel msg = msgLabel();
+        // ── Message label ─────────────────────
+        JLabel msg = new JLabel(" ");
+        msg.setFont(MainFrame.FONT_SMALL);
+        msg.setAlignmentX(LEFT_ALIGNMENT);
         card.add(msg);
-        card.add(Box.createVerticalStrut(8));
+        card.add(Box.createVerticalStrut(12));
 
-        JButton btn = MainFrame.primaryButton("Add Candidate");
-        btn.setAlignmentX(LEFT_ALIGNMENT);
+        // ── Button row ────────────────────────
+        JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        btnRow.setOpaque(false);
+        btnRow.setAlignmentX(LEFT_ALIGNMENT);
+        btnRow.setMaximumSize(new Dimension(660, 44));
 
+        JButton btn      = MainFrame.primaryButton("Add Candidate");
+        JButton clearBtn = MainFrame.dangerButton("Clear Fields");
+
+        btnRow.add(btn);
+        btnRow.add(Box.createHorizontalStrut(12));
+        btnRow.add(clearBtn);
+        card.add(btnRow);
+
+        // ── Clear button ──────────────────────
+        clearBtn.addActionListener(e -> {
+            nameField.setText(""); ageField.setText("");
+            phoneField.setText(""); candidateIDField.setText("");
+            voterIDField.setText(""); documentField.setText("");
+            partyIDField.setText(""); constituencyField.setText("");
+            msg.setText(" ");
+        });
+
+        // ── Add button ────────────────────────
         btn.addActionListener(e -> {
             String name         = nameField.getText().trim();
             String ageStr       = ageField.getText().trim();
@@ -397,7 +443,7 @@ public class AdminDashboard extends JPanel {
             String partyID      = partyIDField.getText().trim();
             String constituency = constituencyField.getText().trim();
 
-            // Empty check
+            // ── Step 1: Empty check ────────────
             if (name.isEmpty() || ageStr.isEmpty() || phone.isEmpty()
                     || candidateID.isEmpty() || voterID.isEmpty()
                     || document.isEmpty() || partyID.isEmpty()
@@ -407,14 +453,14 @@ public class AdminDashboard extends JPanel {
                 return;
             }
 
-            // Name check
+            // ── Step 2: Name check ─────────────
             if (!Validator.isValidName(name)) {
                 msg.setForeground(MainFrame.DANGER);
                 msg.setText("Name must contain only letters (min 3 chars).");
                 return;
             }
 
-            // Age check
+            // ── Step 3: Age check ──────────────
             int age;
             try { age = Integer.parseInt(ageStr); }
             catch (NumberFormatException ex) {
@@ -428,28 +474,28 @@ public class AdminDashboard extends JPanel {
                 return;
             }
 
-            // Phone check
+            // ── Step 4: Phone check ────────────
             if (!Validator.isValidPhone(phone)) {
                 msg.setForeground(MainFrame.DANGER);
                 msg.setText("Phone: 10 digits starting with 6-9.");
                 return;
             }
 
-            // VoterID check
+            // ── Step 5: VoterID check ──────────
             if (!Validator.isValidVoterID(voterID)) {
                 msg.setForeground(MainFrame.DANGER);
                 msg.setText(Validator.voterIDError());
                 return;
             }
 
-            // Document check
+            // ── Step 6: Document check ─────────
             if (!Validator.isValidDocument(document)) {
                 msg.setForeground(MainFrame.DANGER);
                 msg.setText(Validator.documentError());
                 return;
             }
 
-            // Constituency exists check
+            // ── Step 7: Constituency check ─────
             Constituency constCheck =
                     LoginScreen.election.getConstituencyByID(constituency);
             if (constCheck == null) {
@@ -458,7 +504,7 @@ public class AdminDashboard extends JPanel {
                 return;
             }
 
-            // Party exists check
+            // ── Step 8: Party check ────────────
             boolean partyFound = false;
             for (Party p : LoginScreen.election.getParties()) {
                 if (p.getPartyID().equalsIgnoreCase(partyID)) {
@@ -471,55 +517,166 @@ public class AdminDashboard extends JPanel {
                 return;
             }
 
-            // Create candidate
+            // ── Step 9: Create candidate ───────
             Candidate newCandidate = new Candidate(name, age, phone,
                     candidateID, voterID, document, partyID, constituency);
 
             ArrayList<Candidate> allCandidates =
                     LoginScreen.election.getCandidates();
 
-            // Duplicate name check
-            if (DocumentVerifier.isDuplicateName(name, allCandidates)) {
+            // ── Step 10: Duplicate name check ──
+            if (DocumentVerifier.isDuplicateCandidateName(
+                    name, allCandidates)) {
+
                 ArrayList<Candidate> duplicates =
-                        DocumentVerifier.getDuplicates(name, allCandidates);
+                        DocumentVerifier.getDuplicateCandidates(
+                                name, allCandidates);
                 Candidate existing = duplicates.get(0);
 
-                int result = JOptionPane.showConfirmDialog(this,
-                        "Duplicate name detected: " + name + "\n"
-                        + "Dual verification required for BOTH candidates.\n"
-                        + "Proceed?",
+                int proceed = JOptionPane.showConfirmDialog(null,
+                        "Duplicate name detected: " + name + "\n\n"
+                        + "Existing Candidate ID : " + existing.getCandidateID() + "\n\n"
+                        + "Dual verification required.\n"
+                        + "Original determined by document match.",
                         "Duplicate Name Detected",
-                        JOptionPane.YES_NO_OPTION);
+                        JOptionPane.OK_CANCEL_OPTION,
+                        JOptionPane.WARNING_MESSAGE);
 
-                if (result != JOptionPane.YES_OPTION) {
+                if (proceed != JOptionPane.OK_OPTION) {
                     msg.setForeground(MainFrame.DANGER);
                     msg.setText("Candidate registration cancelled.");
                     return;
                 }
 
-                String exVoterID = JOptionPane.showInputDialog(this,
-                        "Re-verify EXISTING candidate: " + existing.getName()
-                        + "\nEnter their Voter ID:");
-                String exDoc = JOptionPane.showInputDialog(this,
-                        "Enter their Aadhaar/PAN:");
-                String newVoterID2 = JOptionPane.showInputDialog(this,
-                        "Verify NEW candidate: " + newCandidate.getName()
-                        + "\nEnter their Voter ID:");
-                String newDoc = JOptionPane.showInputDialog(this,
-                        "Enter their Aadhaar/PAN:");
+                // Verify existing candidate
+                JOptionPane.showMessageDialog(null,
+                        "Step 1 of 2: Re-verify the EXISTING candidate.\n"
+                        + "Name: " + existing.getName()
+                        + "  |  ID: " + existing.getCandidateID(),
+                        "Verify Existing Candidate",
+                        JOptionPane.INFORMATION_MESSAGE);
 
-                boolean verified = DocumentVerifier.dualVerifyBoth(
+                String exVoterID = JOptionPane.showInputDialog(null,
+                        "Enter EXISTING candidate's Voter ID:");
+                if (exVoterID == null) {
+                    msg.setForeground(MainFrame.DANGER);
+                    msg.setText("Registration cancelled."); return;
+                }
+
+                String exDoc = JOptionPane.showInputDialog(null,
+                        "Enter EXISTING candidate's Aadhaar / PAN:");
+                if (exDoc == null) {
+                    msg.setForeground(MainFrame.DANGER);
+                    msg.setText("Registration cancelled."); return;
+                }
+
+                // Verify new candidate
+                JOptionPane.showMessageDialog(null,
+                        "Step 2 of 2: Verify the NEW candidate.\n"
+                        + "Name: " + newCandidate.getName()
+                        + "  |  ID: " + newCandidate.getCandidateID(),
+                        "Verify New Candidate",
+                        JOptionPane.INFORMATION_MESSAGE);
+
+                String newVoterID2 = JOptionPane.showInputDialog(null,
+                        "Enter NEW candidate's Voter ID:");
+                if (newVoterID2 == null) {
+                    msg.setForeground(MainFrame.DANGER);
+                    msg.setText("Registration cancelled."); return;
+                }
+
+                String newDoc = JOptionPane.showInputDialog(null,
+                        "Enter NEW candidate's Aadhaar / PAN:");
+                if (newDoc == null) {
+                    msg.setForeground(MainFrame.DANGER);
+                    msg.setText("Registration cancelled."); return;
+                }
+
+                // Run dual verification
+                String verifyResult = DocumentVerifier.dualVerifyCandidates(
                         existing, exVoterID, exDoc,
                         newCandidate, newVoterID2, newDoc);
 
-                if (!verified) {
-                    msg.setForeground(MainFrame.DANGER);
-                    msg.setText("Dual verification failed. Candidate rejected.");
-                    return;
+                switch (verifyResult) {
+                    case "FAILED" -> {
+                        JOptionPane.showMessageDialog(null,
+                                "Dual verification FAILED.\n"
+                                + "Documents do not match for either candidate.\n"
+                                + "Registration rejected.",
+                                "Verification Failed",
+                                JOptionPane.ERROR_MESSAGE);
+                        msg.setForeground(MainFrame.DANGER);
+                        msg.setText("Verification failed. Registration rejected.");
+                        return;
+                    }
+                    case "SAME" -> {
+                        JOptionPane.showMessageDialog(null,
+                                "Same person detected!\n"
+                                + "Both entries share identical documents.\n"
+                                + "Duplicate registration rejected.",
+                                "Duplicate Detected",
+                                JOptionPane.ERROR_MESSAGE);
+                        msg.setForeground(MainFrame.DANGER);
+                        msg.setText("Same person detected. Rejected.");
+                        return;
+                    }
+                    case "EXISTING" -> {
+                        // Existing is original — block new
+                        JOptionPane.showMessageDialog(null,
+                                "Result: EXISTING candidate is the original.\n\n"
+                                + "New candidate documents do not match.\n"
+                                + "New candidate registration BLOCKED.",
+                                "Registration Blocked",
+                                JOptionPane.ERROR_MESSAGE);
+                        msg.setForeground(MainFrame.DANGER);
+                        msg.setText("Blocked. Existing candidate is the original.");
+                        return;
+                    }
+                    case "NEW" -> {
+                        // New is original — remove existing, add new
+                        JOptionPane.showMessageDialog(null,
+                                "Result: NEW candidate is the original.\n\n"
+                                + "Existing candidate had incorrect documents.\n"
+                                + "Existing candidate removed. New will be added.",
+                                "Existing Candidate Removed",
+                                JOptionPane.WARNING_MESSAGE);
+
+                        // Remove existing from election
+                        LoginScreen.election.getCandidates().remove(existing);
+
+                        // Remove from constituency
+                        Constituency existingConst = LoginScreen.election
+                                .getConstituencyByID(
+                                        existing.getConstituencyID());
+                        if (existingConst != null) {
+                            existingConst.getCandidateIDs()
+                                    .remove(existing.getCandidateID());
+                        }
+
+                        // Remove from party
+                        for (Party p : LoginScreen.election.getParties()) {
+                            p.getCandidateIDs()
+                                    .remove(existing.getCandidateID());
+                        }
+                        // Fall through to add new candidate
+                    }
+                    case "BOTH" -> {
+                        // Both are originals — allow new
+                        JOptionPane.showMessageDialog(null,
+                                "Result: BOTH candidates are genuine originals.\n\n"
+                                + "Documents are completely different.\n"
+                                + "New candidate approved.",
+                                "Both Verified",
+                                JOptionPane.INFORMATION_MESSAGE);
+                        // Fall through to add new candidate
+                    }
                 }
             }
 
-            // Add candidate
+            // ── Step 11: Add candidate ─────────
+            // Reaches here if:
+            // - No duplicate name
+            // - Duplicate but result was NEW or BOTH
             LoginScreen.election.addCandidate(newCandidate);
             constCheck.addCandidate(candidateID);
 
@@ -530,38 +687,19 @@ public class AdminDashboard extends JPanel {
             }
 
             msg.setForeground(MainFrame.SUCCESS);
-            msg.setText("Candidate added: " + name);
+            msg.setText("Candidate added successfully: " + name);
 
             // Clear all fields
             nameField.setText(""); ageField.setText("");
             phoneField.setText(""); candidateIDField.setText("");
             voterIDField.setText(""); documentField.setText("");
             partyIDField.setText(""); constituencyField.setText("");
-
-            // Scroll back to top after adding
-            SwingUtilities.invokeLater(() -> {
-                JScrollPane sp = (JScrollPane) SwingUtilities
-                        .getAncestorOfClass(JScrollPane.class, card);
-                if (sp != null)
-                    sp.getVerticalScrollBar().setValue(0);
-            });
         });
 
-        card.add(btn);
+        outer.add(card);
 
-        // ── Wrap card in ScrollPane ───────────────
-        JScrollPane scrollPane = new JScrollPane(card);
-        scrollPane.setBorder(null);
-        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        scrollPane.setHorizontalScrollBarPolicy(
-                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollPane.setVerticalScrollBarPolicy(
-                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        scrollPane.getViewport().setBackground(MainFrame.WHITE);
-
-        // ── Show in main content ──────────────────
         mainContent.removeAll();
-        mainContent.add(scrollPane, BorderLayout.CENTER);
+        mainContent.add(outer, BorderLayout.CENTER);
         mainContent.revalidate();
         mainContent.repaint();
     }
@@ -669,7 +807,7 @@ public class AdminDashboard extends JPanel {
     private boolean checkElection() {
         if (LoginScreen.election == null) {
             JOptionPane.showMessageDialog(this,
-                    "No election setup yet!\nGo to 'Setup Election' first.",
+                    "No election setup yet!\nGo to Setup Election first.",
                     "No Election", JOptionPane.WARNING_MESSAGE);
             showHome();
             return false;
@@ -711,6 +849,13 @@ public class AdminDashboard extends JPanel {
         card.add(Box.createVerticalStrut(4));
         card.add(field);
         card.add(Box.createVerticalStrut(12));
+    }
+
+    private JLabel gridLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(MainFrame.FONT_SUBHEAD);
+        label.setForeground(MainFrame.TEXT_DARK);
+        return label;
     }
 
     private JLabel msgLabel() {
