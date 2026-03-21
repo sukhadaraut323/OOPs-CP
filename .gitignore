@@ -1,0 +1,68 @@
+# ── Compiled class files ──────────────────────
+out/
+*.class
+
+# ── IDE files ─────────────────────────────────
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Eclipse
+.eclipse/
+.classpath
+.project
+.settings/
+bin/
+
+# NetBeans
+nbproject/
+build/
+nbbuild/
+dist/
+nbdist/
+
+# ── OS files ──────────────────────────────────
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Linux
+*~
+.fuse_hidden*
+.Trash-*
+
+# ── Java specific ─────────────────────────────
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+hs_err_pid*
+
+# ── Logs ──────────────────────────────────────
+*.log
+logs/
+
+# ── Temp files ────────────────────────────────
+*.tmp
+*.temp
+*.swp
+*.bak
