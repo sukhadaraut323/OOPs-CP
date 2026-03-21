@@ -2,8 +2,10 @@ package gui;
 
 import core.Constituency;
 import core.DocumentVerifier;
+import core.PendingVerification;
 import persons.Voter;
 import utils.Validator;
+// import core.PendingVerification;
 
 import javax.swing.*;
 import java.awt.*;
@@ -166,154 +168,47 @@ public class RegisterScreen extends JPanel {
             }
 
             // ── Step 10: Duplicate NAME check ──
-            // Only runs after all validations pass
-            if (DocumentVerifier.isDuplicateVoterName(
-                    name, LoginScreen.voters)) {
+            if (DocumentVerifier.isDuplicateVoterName(name, LoginScreen.voters)) {
 
                 ArrayList<Voter> duplicates =
-                        DocumentVerifier.getDuplicateVoters(
-                                name, LoginScreen.voters);
+                    DocumentVerifier.getDuplicateVoters(name, LoginScreen.voters);
                 Voter existingVoter = duplicates.get(0);
 
-                // Warn and ask to proceed
-                int proceed = JOptionPane.showConfirmDialog(null,
-                        "Another voter with the same name exists:\n\n"
-                        + "  Name     : " + existingVoter.getName() + "\n"
-                        + "  Voter ID : " + existingVoter.getVoterID() + "\n\n"
-                        + "Dual document verification is required.\n"
-                        + "The original person will be determined by document match.",
-                        "Duplicate Name Detected",
-                        JOptionPane.OK_CANCEL_OPTION,
+                // ── Flag EXISTING voter as unverified ───
+                existingVoter.setVerified(false);
+
+                // ── Create new voter as unverified too ──
+                Voter newVoterPending = new Voter(name, age, phone,
+                        voterID, document, constituency);
+                newVoterPending.setVerified(false);  // blocked until admin verifies
+
+                // ── Add new voter to main list ──────────
+                c.addVoter(voterID);
+                LoginScreen.voters.add(newVoterPending);
+
+                // ── Create pending verification record ──
+                PendingVerification pending = new PendingVerification(
+                        existingVoter, newVoterPending);
+                LoginScreen.pendingVerifications.add(pending);
+
+                        // ── Show message to new voter ───────────
+                JOptionPane.showMessageDialog(null,
+                        "Duplicate name detected!\n\n"
+                        + "Another voter named '" + name + "' is already registered.\n\n"
+                        + "Both registrations are now PENDING verification.\n"
+                        + "Neither voter can vote until the Election Officer\n"
+                        + "verifies both identities at the Election Office.\n\n"
+                        + "Your Voter ID: " + voterID + "\n"
+                        + "Please visit the Election Office with your documents.",
+                        "Registration Pending Verification",
                         JOptionPane.WARNING_MESSAGE);
 
-                if (proceed != JOptionPane.OK_OPTION) {
-                    errorLabel.setText("Registration cancelled.");
-                    return;
-                }
-
-                // Re-verify existing voter
-                JOptionPane.showMessageDialog(null,
-                        "Step 1 of 2: Re-verify the EXISTING voter.\n"
-                        + "Name: " + existingVoter.getName()
-                        + "  |  Voter ID: " + existingVoter.getVoterID(),
-                        "Verify Existing Voter",
-                        JOptionPane.INFORMATION_MESSAGE);
-
-                String exVoterID = JOptionPane.showInputDialog(null,
-                        "Enter EXISTING voter's Voter ID:");
-                if (exVoterID == null) {
-                    errorLabel.setText("Registration cancelled.");
-                    return;
-                }
-
-                String exDocument = JOptionPane.showInputDialog(null,
-                        "Enter EXISTING voter's Aadhaar / PAN:");
-                if (exDocument == null) {
-                    errorLabel.setText("Registration cancelled.");
-                    return;
-                }
-
-                // Verify new voter
-                JOptionPane.showMessageDialog(null,
-                        "Step 2 of 2: Verify the NEW voter.\n"
-                        + "Name: " + name
-                        + "  |  Voter ID: " + voterID,
-                        "Verify New Voter",
-                        JOptionPane.INFORMATION_MESSAGE);
-
-                String newVoterID2 = JOptionPane.showInputDialog(null,
-                        "Enter NEW voter's Voter ID:");
-                if (newVoterID2 == null) {
-                    errorLabel.setText("Registration cancelled.");
-                    return;
-                }
-
-                String newDocument = JOptionPane.showInputDialog(null,
-                        "Enter NEW voter's Aadhaar / PAN:");
-                if (newDocument == null) {
-                    errorLabel.setText("Registration cancelled.");
-                    return;
-                }
-
-                // Create new voter object for verification
-                Voter newVoterObj = new Voter(name, age, phone,
-                        voterID, document, constituency);
-
-                // Run dual verification
-                String result = DocumentVerifier.dualVerifyVoters(
-                        existingVoter, exVoterID, exDocument,
-                        newVoterObj, newVoterID2, newDocument);
-
-                switch (result) {
-                    case "FAILED" -> {
-                        JOptionPane.showMessageDialog(null,
-                                "Dual verification FAILED.\n"
-                                + "Documents do not match for either voter.\n"
-                                + "Registration rejected.",
-                                "Verification Failed",
-                                JOptionPane.ERROR_MESSAGE);
-                        errorLabel.setText(
-                                "Verification failed. Registration rejected.");
-                        return;
-                    }
-                    case "SAME" -> {
-                        JOptionPane.showMessageDialog(null,
-                                "Same person detected!\n"
-                                + "You are already registered as a voter.\n"
-                                + "Duplicate registration rejected.",
-                                "Already Registered",
-                                JOptionPane.ERROR_MESSAGE);
-                        errorLabel.setText("Already registered. Rejected.");
-                        return;
-                    }
-                    case "EXISTING" -> {
-                        JOptionPane.showMessageDialog(null,
-                                "Result: EXISTING voter is the original.\n\n"
-                                + "New registration does not match genuine documents.\n"
-                                + "New registration BLOCKED.",
-                                "Registration Blocked",
-                                JOptionPane.ERROR_MESSAGE);
-                        errorLabel.setText(
-                                "Blocked. Existing voter is the original.");
-                        return;
-                    }
-                    case "NEW" -> {
-                        JOptionPane.showMessageDialog(null,
-                                "Result: NEW voter is the original.\n\n"
-                                + "Existing registration had incorrect documents.\n"
-                                + "Existing voter removed. New voter will be registered.",
-                                "Existing Voter Removed",
-                                JOptionPane.WARNING_MESSAGE);
-
-                        // Remove existing voter
-                        LoginScreen.voters.remove(existingVoter);
-
-                        // Remove from constituency
-                        Constituency existingConst = LoginScreen.election
-                                .getConstituencyByID(
-                                        existingVoter.getConstituencyID());
-                        if (existingConst != null) {
-                            existingConst.getVoterIDs()
-                                    .remove(existingVoter.getVoterID());
-                        }
-                        // Fall through to register new voter
-                    }
-                    case "BOTH" -> {
-                        JOptionPane.showMessageDialog(null,
-                                "Result: BOTH voters are genuine originals.\n\n"
-                                + "Documents are completely different.\n"
-                                + "New voter registration approved.",
-                                "Both Verified",
-                                JOptionPane.INFORMATION_MESSAGE);
-                        // Fall through to register new voter
-                    }
-                }
+                MainFrame.showScreen(new LoginScreen());
+                return;  // ← stop here, skip normal registration below
             }
 
-            // ── Step 11: Register voter ────────
-            // Reaches here if:
-            // - No duplicate name (normal registration)
-            // - Duplicate but result was NEW or BOTH
+            // ── Step 11: Normal Registration ───────────
+            // Only reaches here if NO duplicate name
             c.addVoter(voterID);
             Voter newVoter = new Voter(name, age, phone,
                     voterID, document, constituency);

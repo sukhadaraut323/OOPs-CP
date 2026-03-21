@@ -7,6 +7,7 @@ import persons.ElectionOfficer;
 import persons.Voter;
 import utils.Validator;
 import voting.EVMVoting;
+import core.PendingVerification;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -86,7 +87,8 @@ public class AdminDashboard extends JPanel {
             "Close Election",
             "View Results",
             "View Voters",
-            "View Ballots"
+            "View Ballots",
+            "Pending Verifications"
         };
 
         for (String item : items) {
@@ -135,6 +137,7 @@ public class AdminDashboard extends JPanel {
             case "View Results"     -> showResults();
             case "View Voters"      -> showVoters();
             case "View Ballots"     -> showBallots();
+            case "Pending Verifications" -> showPendingVerifications();
         }
         mainContent.revalidate();
         mainContent.repaint();
@@ -887,5 +890,304 @@ public class AdminDashboard extends JPanel {
         table.setSelectionBackground(new Color(187, 222, 251));
         table.setDefaultEditor(Object.class, null);
         return table;
+    }
+
+    private void showPendingVerifications() {
+        JPanel panel = new JPanel(new BorderLayout(0, 12));
+        panel.setOpaque(false);
+
+        JLabel heading = MainFrame.sectionLabel("Pending Voter Verifications");
+        panel.add(heading, BorderLayout.NORTH);
+
+        // Filter only PENDING ones
+        ArrayList<PendingVerification> pending = new ArrayList<>();
+        for (PendingVerification pv : LoginScreen.pendingVerifications) {
+            if (pv.getStatus().equals("PENDING")) pending.add(pv);
+        }
+
+        if (pending.isEmpty()) {
+            JLabel none = MainFrame.infoLabel(
+                    "No pending verifications. All voters are verified.");
+            none.setHorizontalAlignment(SwingConstants.CENTER);
+            panel.add(none, BorderLayout.CENTER);
+            showCard(panel);
+            return;
+        }
+
+        // List of pending cards
+        JPanel listPanel = new JPanel();
+        listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
+        listPanel.setOpaque(false);
+
+        for (PendingVerification pv : pending) {
+            listPanel.add(buildPendingCard(pv));
+            listPanel.add(Box.createVerticalStrut(12));
+        }
+
+        JScrollPane scroll = new JScrollPane(listPanel);
+        scroll.setBorder(null);
+        scroll.getViewport().setBackground(MainFrame.BG);
+        panel.add(scroll, BorderLayout.CENTER);
+
+        showCard(panel);
+    }
+
+    private JPanel buildPendingCard(PendingVerification pv) {
+        JPanel card = new JPanel();
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBackground(MainFrame.WHITE);
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(MainFrame.ACCENT, 2),
+                BorderFactory.createEmptyBorder(16, 20, 16, 20)));
+        card.setMaximumSize(new Dimension(750, 260));
+        card.setAlignmentX(LEFT_ALIGNMENT);
+
+        // ── Header ────────────────────────────────
+        JLabel title = new JLabel("PENDING: Duplicate Name — "
+                + pv.getExistingVoter().getName());
+        title.setFont(MainFrame.FONT_HEADING);
+        title.setForeground(MainFrame.ACCENT);
+        title.setAlignmentX(LEFT_ALIGNMENT);
+
+        JLabel subtitle = new JLabel(
+                "Both voters are blocked from voting until you verify.");
+        subtitle.setFont(MainFrame.FONT_SMALL);
+        subtitle.setForeground(MainFrame.TEXT_GREY);
+        subtitle.setAlignmentX(LEFT_ALIGNMENT);
+
+        card.add(title);
+        card.add(Box.createVerticalStrut(4));
+        card.add(subtitle);
+        card.add(Box.createVerticalStrut(12));
+
+        // ── Voter info row ────────────────────────
+        JPanel infoRow = new JPanel(new GridLayout(1, 2, 16, 0));
+        infoRow.setOpaque(false);
+        infoRow.setMaximumSize(new Dimension(720, 80));
+        infoRow.setAlignmentX(LEFT_ALIGNMENT);
+
+        infoRow.add(voterInfoBox("Existing Voter",
+                pv.getExistingVoter(), MainFrame.PRIMARY));
+        infoRow.add(voterInfoBox("New Voter",
+                pv.getNewVoter(), MainFrame.SUCCESS));
+
+        card.add(infoRow);
+        card.add(Box.createVerticalStrut(16));
+
+        // ── Verify button ─────────────────────────
+        JLabel verifyMsg = new JLabel(" ");
+        verifyMsg.setFont(MainFrame.FONT_SMALL);
+        verifyMsg.setAlignmentX(LEFT_ALIGNMENT);
+
+        JButton verifyBtn = MainFrame.primaryButton("Verify Both Voters");
+        verifyBtn.setAlignmentX(LEFT_ALIGNMENT);
+
+        verifyBtn.addActionListener(e ->
+                handlePendingVerification(pv, verifyMsg));
+
+        card.add(verifyBtn);
+        card.add(Box.createVerticalStrut(6));
+        card.add(verifyMsg);
+
+        return card;
+    }
+
+    private JPanel voterInfoBox(String label, Voter voter, Color color) {
+        JPanel box = new JPanel();
+        box.setLayout(new BoxLayout(box, BoxLayout.Y_AXIS));
+        box.setBackground(MainFrame.BG);
+        box.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(MainFrame.BORDER),
+                BorderFactory.createEmptyBorder(10, 14, 10, 14)));
+
+        JLabel typeLabel = new JLabel(label);
+        typeLabel.setFont(MainFrame.FONT_SUBHEAD);
+        typeLabel.setForeground(color);
+
+        JLabel nameLabel = new JLabel("Name     : " + voter.getName());
+        nameLabel.setFont(MainFrame.FONT_BODY);
+        nameLabel.setForeground(MainFrame.TEXT_DARK);
+
+        JLabel idLabel = new JLabel("Voter ID : " + voter.getVoterID());
+        idLabel.setFont(MainFrame.FONT_SMALL);
+        idLabel.setForeground(MainFrame.TEXT_GREY);
+
+        JLabel constLabel = new JLabel("Const    : " + voter.getConstituencyID());
+        constLabel.setFont(MainFrame.FONT_SMALL);
+        constLabel.setForeground(MainFrame.TEXT_GREY);
+
+        box.add(typeLabel);
+        box.add(Box.createVerticalStrut(4));
+        box.add(nameLabel);
+        box.add(Box.createVerticalStrut(2));
+        box.add(idLabel);
+        box.add(Box.createVerticalStrut(2));
+        box.add(constLabel);
+
+        return box;
+    }
+
+    private void handlePendingVerification(PendingVerification pv,
+            JLabel verifyMsg) {
+
+        Voter existing = pv.getExistingVoter();
+        Voter newVoter = pv.getNewVoter();
+
+        JOptionPane.showMessageDialog(null,
+                "You will now verify both voters.\n\n"
+                + "Enter the documents exactly as submitted\n"
+                + "by each voter during registration.",
+                "Admin Verification",
+                JOptionPane.INFORMATION_MESSAGE);
+
+        // ── Verify existing voter ──────────────────
+        JOptionPane.showMessageDialog(null,
+                "Step 1 of 2: Verify EXISTING voter\n\n"
+                + "Name     : " + existing.getName() + "\n"
+                + "Voter ID : " + existing.getVoterID(),
+                "Verify Existing Voter",
+                JOptionPane.INFORMATION_MESSAGE);
+
+        String exVoterID = JOptionPane.showInputDialog(null,
+                "Enter EXISTING voter's Voter ID:");
+        if (exVoterID == null) {
+            verifyMsg.setForeground(MainFrame.DANGER);
+            verifyMsg.setText("Verification cancelled.");
+            return;
+        }
+
+        String exDocument = JOptionPane.showInputDialog(null,
+                "Enter EXISTING voter's Aadhaar / PAN:");
+        if (exDocument == null) {
+            verifyMsg.setForeground(MainFrame.DANGER);
+            verifyMsg.setText("Verification cancelled.");
+            return;
+        }
+
+        // ── Verify new voter ───────────────────────
+        JOptionPane.showMessageDialog(null,
+                "Step 2 of 2: Verify NEW voter\n\n"
+                + "Name     : " + newVoter.getName() + "\n"
+                + "Voter ID : " + newVoter.getVoterID(),
+                "Verify New Voter",
+                JOptionPane.INFORMATION_MESSAGE);
+
+        String newVoterID = JOptionPane.showInputDialog(null,
+                "Enter NEW voter's Voter ID:");
+        if (newVoterID == null) {
+            verifyMsg.setForeground(MainFrame.DANGER);
+            verifyMsg.setText("Verification cancelled.");
+            return;
+        }
+
+        String newDocument = JOptionPane.showInputDialog(null,
+                "Enter NEW voter's Aadhaar / PAN:");
+        if (newDocument == null) {
+            verifyMsg.setForeground(MainFrame.DANGER);
+            verifyMsg.setText("Verification cancelled.");
+            return;
+        }
+
+        // ── Run dual verification ──────────────────
+        String result = DocumentVerifier.dualVerifyVoters(
+                existing, exVoterID, exDocument,
+                newVoter, newVoterID, newDocument);
+
+        switch (result) {
+            case "FAILED" -> {
+                // Both remain blocked
+                pv.setStatus("FAILED");
+                JOptionPane.showMessageDialog(null,
+                        "Verification FAILED.\n\n"
+                        + "Documents do not match for either voter.\n"
+                        + "Both voters remain blocked.",
+                        "Verification Failed",
+                        JOptionPane.ERROR_MESSAGE);
+                verifyMsg.setForeground(MainFrame.DANGER);
+                verifyMsg.setText("Failed. Both voters remain blocked.");
+            }
+            case "SAME" -> {
+                // Same person — block new, unblock existing
+                pv.setStatus("REJECTED");
+                existing.setVerified(true);   // restore existing
+                LoginScreen.voters.remove(newVoter);  // remove new
+
+                // Remove new voter from constituency too
+                if (LoginScreen.election != null) {
+                    core.Constituency c = LoginScreen.election
+                            .getConstituencyByID(newVoter.getConstituencyID());
+                    if (c != null) c.getVoterIDs().remove(newVoter.getVoterID());
+                }
+
+                JOptionPane.showMessageDialog(null,
+                        "Same person detected!\n\n"
+                        + "Existing voter restored and can vote.\n"
+                        + "New registration rejected and removed.",
+                        "Duplicate Rejected",
+                        JOptionPane.WARNING_MESSAGE);
+                verifyMsg.setForeground(MainFrame.SUCCESS);
+                verifyMsg.setText("Same person. Existing voter restored.");
+            }
+            case "EXISTING" -> {
+                // Existing is original — unblock existing, remove new
+                pv.setStatus("EXISTING_APPROVED");
+                existing.setVerified(true);
+                LoginScreen.voters.remove(newVoter);
+
+                if (LoginScreen.election != null) {
+                    core.Constituency c = LoginScreen.election
+                            .getConstituencyByID(newVoter.getConstituencyID());
+                    if (c != null) c.getVoterIDs().remove(newVoter.getVoterID());
+                }
+
+                JOptionPane.showMessageDialog(null,
+                        "Result: EXISTING voter is the original.\n\n"
+                        + "Existing voter approved and can now vote.\n"
+                        + "New voter registration rejected and removed.",
+                        "Existing Voter Approved",
+                        JOptionPane.INFORMATION_MESSAGE);
+                verifyMsg.setForeground(MainFrame.SUCCESS);
+                verifyMsg.setText("Existing voter approved. New voter removed.");
+            }
+            case "NEW" -> {
+                // New is original — unblock new, remove existing
+                pv.setStatus("NEW_APPROVED");
+                newVoter.setVerified(true);
+                LoginScreen.voters.remove(existing);
+
+                if (LoginScreen.election != null) {
+                    core.Constituency c = LoginScreen.election
+                            .getConstituencyByID(existing.getConstituencyID());
+                    if (c != null) c.getVoterIDs().remove(existing.getVoterID());
+                }
+
+                JOptionPane.showMessageDialog(null,
+                        "Result: NEW voter is the original.\n\n"
+                        + "New voter approved and can now vote.\n"
+                        + "Existing voter registration rejected and removed.",
+                        "New Voter Approved",
+                        JOptionPane.INFORMATION_MESSAGE);
+                verifyMsg.setForeground(MainFrame.SUCCESS);
+                verifyMsg.setText("New voter approved. Existing voter removed.");
+            }
+            case "BOTH" -> {
+                // Both are originals — unblock both
+                pv.setStatus("BOTH_APPROVED");
+                existing.setVerified(true);
+                newVoter.setVerified(true);
+
+                JOptionPane.showMessageDialog(null,
+                        "Result: BOTH voters are genuine originals.\n\n"
+                        + "Documents are completely different.\n"
+                        + "Both voters approved and can now vote.",
+                        "Both Voters Approved",
+                        JOptionPane.INFORMATION_MESSAGE);
+                verifyMsg.setForeground(MainFrame.SUCCESS);
+                verifyMsg.setText("Both voters approved and can now vote.");
+            }
+        }
+
+        // Refresh pending list
+        showPendingVerifications();
     }
 }

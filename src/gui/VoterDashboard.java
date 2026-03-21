@@ -176,6 +176,41 @@ private String getVotedStatusText() {
         statusCard.add(votingStatus);
         statusCard.add(Box.createVerticalStrut(6));
         statusCard.add(elecLabel);
+        // ── Show pending warning if not verified ───
+        if (!voter.isVerified()) {
+            JPanel warningCard = new JPanel();
+            warningCard.setLayout(new BoxLayout(warningCard, BoxLayout.Y_AXIS));
+            warningCard.setBackground(new Color(255, 243, 224));
+            warningCard.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(MainFrame.ACCENT, 2),
+                    BorderFactory.createEmptyBorder(16, 20, 16, 20)));
+            warningCard.setMaximumSize(new Dimension(700, 100));
+            warningCard.setAlignmentX(LEFT_ALIGNMENT);
+
+            JLabel warn1 = new JLabel("Your registration is PENDING verification.");
+            warn1.setFont(MainFrame.FONT_SUBHEAD);
+            warn1.setForeground(MainFrame.ACCENT);
+
+            JLabel warn2 = new JLabel(
+                    "Please visit the Election Office with your Voter ID and Aadhaar/PAN.");
+            warn2.setFont(MainFrame.FONT_SMALL);
+            warn2.setForeground(MainFrame.TEXT_GREY);
+
+            JLabel warn3 = new JLabel(
+                    "You will not be able to vote until the Election Officer verifies you.");
+            warn3.setFont(MainFrame.FONT_SMALL);
+            warn3.setForeground(MainFrame.DANGER);
+
+            warningCard.add(warn1);
+            warningCard.add(Box.createVerticalStrut(4));
+            warningCard.add(warn2);
+            warningCard.add(Box.createVerticalStrut(2));
+            warningCard.add(warn3);
+
+            panel.add(Box.createVerticalStrut(16));
+            panel.add(warningCard);
+        }
+
 
         // Info cards row
         JPanel infoRow = new JPanel(new GridLayout(1, 3, 16, 0));
@@ -235,14 +270,22 @@ private String getVotedStatusText() {
     // ── Cast Vote ─────────────────────────────
     private void showCastVote() {
         if (LoginScreen.election == null) {
-            showMsg("❌ No election has been setup yet."); return;
+            showMsg("No election has been setup yet."); return;
         }
         if (!LoginScreen.election.isOpen()) {
-            showMsg("❌ Election is currently closed. Voting not allowed."); return;
+            showMsg("Election is currently closed. Voting not allowed."); return;
         }
         if (voter.hasVoted()) {
-            showMsg("✅ You have already cast your vote!"); return;
+            showMsg("You have already cast your vote!"); return;
         }
+
+        // ── NEW: Check voter is verified ────────
+        if (!voter.isVerified()) {
+            showMsg("Your registration is PENDING admin verification.\n"
+                    + "Please visit the Election Office.");
+            return;
+        }
+
         MainFrame.showScreen(new BallotScreen(voter, this));
     }
 

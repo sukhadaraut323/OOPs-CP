@@ -1,11 +1,13 @@
 package gui;
 
 import core.Constituency;
+import core.PendingVerification;
 import election.GeneralElection;
 import persons.ElectionOfficer;
 import persons.Voter;
 import utils.Validator;
 import voting.EVMVoting;
+// import core.PendingVerification;
 
 import javax.swing.*;
 import java.awt.*;
@@ -16,6 +18,7 @@ public class LoginScreen extends JPanel {
     public static GeneralElection election   = null;
     public static EVMVoting        evmVoting = null;
     public static ArrayList<Voter> voters    = new ArrayList<>();
+    public static ArrayList<PendingVerification> pendingVerifications = new ArrayList<>();
 
     private static final String ADMIN_ID  = "ADMIN001";
     private static final String ADMIN_PWD = "admin@123";
