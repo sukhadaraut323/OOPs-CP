@@ -224,6 +224,35 @@ private String getVotedStatusText() {
         infoRow.add(miniCard("🔐 Voter ID", voter.getVoterID(),
                 new Color(106, 27, 154)));
 
+        // ── Voting hours card ──────────────────────
+        JPanel hoursCard = new JPanel(new BorderLayout(12, 0));
+        hoursCard.setBackground(new Color(232, 245, 233));
+        hoursCard.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(MainFrame.SUCCESS),
+                BorderFactory.createEmptyBorder(12, 16, 12, 16)));
+        hoursCard.setMaximumSize(new Dimension(700, 52));
+        hoursCard.setAlignmentX(LEFT_ALIGNMENT);
+
+        java.time.LocalTime now = java.time.LocalTime.now();
+        String currentTime = now.format(
+                java.time.format.DateTimeFormatter.ofPattern("hh:mm a"));
+
+        boolean withinHours = !now.isBefore(java.time.LocalTime.of(7, 0))
+                && !now.isAfter(java.time.LocalTime.of(17, 30));
+
+        JLabel hoursLabel = new JLabel(
+                "Voting Hours: 7:00 AM to 5:30 PM   |   Current Time: "
+                + currentTime + "   |   Status: "
+                + (withinHours ? "OPEN" : "CLOSED"));
+        hoursLabel.setFont(MainFrame.FONT_SMALL);
+        hoursLabel.setForeground(withinHours ? MainFrame.SUCCESS : MainFrame.DANGER);
+
+        hoursCard.add(hoursLabel, BorderLayout.CENTER);
+
+        panel.add(Box.createVerticalStrut(12));
+        panel.add(hoursCard);
+        
+
         // Cast vote button (if not voted)
         if (!voter.hasVoted()) {
             JButton castBtn = MainFrame.successButton("🗳️  Cast Your Vote Now");
@@ -278,11 +307,20 @@ private String getVotedStatusText() {
         if (voter.hasVoted()) {
             showMsg("You have already cast your vote!"); return;
         }
-
-        // ── NEW: Check voter is verified ────────
         if (!voter.isVerified()) {
-            showMsg("Your registration is PENDING admin verification.\n"
-                    + "Please visit the Election Office.");
+            showMsg("Your registration is PENDING admin verification."); return;
+        }
+
+        // ── Time validation ────────────────────
+        java.time.LocalTime now   = java.time.LocalTime.now();
+        java.time.LocalTime start = java.time.LocalTime.of(7, 0);
+        java.time.LocalTime end   = java.time.LocalTime.of(17, 30);
+
+        if (now.isBefore(start) || now.isAfter(end)) {
+            String currentTime = now.format(
+                    java.time.format.DateTimeFormatter.ofPattern("hh:mm a"));
+            showMsg("Voting hours are 7:00 AM to 5:30 PM only.\n"
+                    + "Current time: " + currentTime);
             return;
         }
 

@@ -244,6 +244,22 @@ public class BallotScreen extends JPanel {
 
     // ── Cast Vote ─────────────────────────────
     private void castVote() {
+
+        // ── Time validation ────────────────────
+        if (!isWithinVotingHours()) {
+            java.time.LocalTime now = java.time.LocalTime.now();
+            String currentTime = now.format(
+                    java.time.format.DateTimeFormatter.ofPattern("hh:mm a"));
+            JOptionPane.showMessageDialog(this,
+                    "Voting is not allowed at this time!\n\n"
+                    + "Voting Hours : 7:00 AM to 5:30 PM\n"
+                    + "Current Time : " + currentTime + "\n\n"
+                    + "Please come back during voting hours.",
+                    "Outside Voting Hours",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
         if (selectedCandidate == null) {
             JOptionPane.showMessageDialog(this,
                     "⚠️ Please select a candidate first!",
@@ -367,5 +383,13 @@ public class BallotScreen extends JPanel {
             if (c.getName().equalsIgnoreCase(target.getName())) count++;
         }
         return count > 1;
+    }
+
+    // ── Voting time validation ─────────────────
+    private boolean isWithinVotingHours() {
+        java.time.LocalTime now   = java.time.LocalTime.now();
+        java.time.LocalTime start = java.time.LocalTime.of(7, 0);
+        java.time.LocalTime end   = java.time.LocalTime.of(17, 30);
+        return !now.isBefore(start) && !now.isAfter(end);
     }
 }
