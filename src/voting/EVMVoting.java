@@ -35,6 +35,15 @@ public class EVMVoting {
             return false;
         }
 
+        // Step 1b — Check voting time   
+        if (!isWithinVotingHours()) {
+            java.time.LocalTime now = java.time.LocalTime.now();
+            System.out.println("Voting is only allowed between 7:00 AM and 5:30 PM.");
+            System.out.println("Current time: " + now.format(
+                    java.time.format.DateTimeFormatter.ofPattern("hh:mm a")));
+            return false;
+        }
+
         // Step 2 — Check voter already voted
         if (voter.hasVoted()) {
             System.out.println("❌ You have already cast your vote!");
@@ -162,6 +171,14 @@ public class EVMVoting {
             b.printBallot();
             System.out.println();
         }
+    }
+
+    // ── Voting time validation ─────────────────
+    private boolean isWithinVotingHours() {
+        java.time.LocalTime now = java.time.LocalTime.now();
+        java.time.LocalTime start = java.time.LocalTime.of(7, 0);   // 7:00 AM
+        java.time.LocalTime end   = java.time.LocalTime.of(17, 30); // 5:30 PM
+        return !now.isBefore(start) && !now.isAfter(end);
     }
 
     public int getTotalVotesCast() { return ballots.size(); }
